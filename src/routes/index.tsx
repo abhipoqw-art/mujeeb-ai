@@ -3,7 +3,17 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Flame, ImageIcon, Loader2, MessageSquare, Send, Sparkles } from "lucide-react";
+import {
+  Download,
+  Flame,
+  ImageIcon,
+  Loader2,
+  MessageSquare,
+  Paperclip,
+  Send,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { streamImage } from "@/lib/stream-image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,6 +94,15 @@ function ImageStudio() {
   const [isFinal, setIsFinal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const urls = files.map((file) => URL.createObjectURL(file));
+    setPreviews(urls);
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [files]);
 
   const generate = async () => {
     if (!prompt.trim() || loading) return;
@@ -92,14 +111,43 @@ function ImageStudio() {
     setImage(null);
     setIsFinal(false);
     try {
-      await streamImage("/api/generate-image", { prompt }, (dataUrl, final) => {
-        setImage(dataUrl);
-        setIsFinal(final);
-      });
+      if (files.length > 0) {
+        const form = new FormData();
+        form.append("prompt", prompt);
+        for (const file of files) form.append("image[]", file);
+        await streamImage("/api/edit-image", form, (dataUrl, final) => {
+          setImage(dataUrl);
+          setIsFinal(final);
+        });
+      } else {
+        await streamImage("/api/generate-image", { prompt }, (dataUrl, final) => {
+          setImage(dataUrl);
+          setIsFinal(final);
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const download = async () => {
+    if (!image) return;
+    try {
+      // Convert the data URL to a real file blob so the browser saves it to the device
+      const blob = await (await fetch(image)).blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `muji-ai-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch {
+      // Fallback: open in a new tab so it can be saved manually
+      window.open(image, "_blank");
     }
   };
 
@@ -108,21 +156,65 @@ function ImageStudio() {
       <Textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        placeholder="Describe the image you want to create..."
+        placeholder={
+          files.length > 0
+            ? "Describe how to change the attached image..."
+            : "Describe the image you want to create..."
+        }
         className="min-h-24 resize-none"
       />
-      <div className="mt-4 flex justify-end">
+
+      {previews.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-3">
+          {previews.map((src, i) => (
+            <div key={src} className="relative">
+              <img
+                src={src}
+                alt={files[i]?.name ?? "Attached image"}
+                className="border-border size-20 rounded-md border object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => setFiles((prev) => prev.filter((_, index) => index !== i))}
+                className="bg-background border-border absolute -right-2 -top-2 rounded-full border p-1 shadow-sm"
+                aria-label="Remove attached image"
+              >
+                <X className="size-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const selected = Array.from(e.target.files ?? []);
+          if (selected.length) setFiles((prev) => [...prev, ...selected]);
+          e.target.value = "";
+        }}
+      />
+
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
+        <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+          <Paperclip className="mr-2 size-4" /> Attach image
+        </Button>
         <Button onClick={generate} disabled={loading || !prompt.trim()}>
           {loading ? (
             <Loader2 className="mr-2 size-4 animate-spin" />
           ) : (
             <Sparkles className="mr-2 size-4" />
           )}
-          Generate
+          {files.length > 0 ? "Modify" : "Generate"}
         </Button>
       </div>
 
       {error && <p className="text-destructive mt-4 text-sm">{error}</p>}
+
 
       <div className="bg-muted mt-6 flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg">
         {image ? (
@@ -140,6 +232,14 @@ function ImageStudio() {
           </p>
         )}
       </div>
+
+      {image && isFinal && (
+        <div className="mt-4 flex justify-end">
+          <Button variant="outline" onClick={download}>
+            <Download className="mr-2 size-4" /> Download
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
