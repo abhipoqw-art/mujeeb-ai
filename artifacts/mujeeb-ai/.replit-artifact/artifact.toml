@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Mujeeb AI"
+description = "A polished AI image-generation experience with playful fictional roast modes, inspired by the supplied reference photo of Abban."
+version = "1.0.0"
+id = "artifacts/mujeeb-ai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19711
+
+[services.development]
+run = "pnpm --filter @workspace/mujeeb-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mujeeb-ai", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/mujeeb-ai/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19711"
+BASE_PATH = "/"
