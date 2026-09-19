@@ -12,22 +12,23 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import mujiPortrait from "@/assets/muji-portrait.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Mujeeb AI — Image Studio & Roast Chat" },
+      { title: "Muji AI — Image Studio & Chat" },
       {
         name: "description",
         content:
-          "Generate images from text and chat with Mujeeb AI, complete with a roast mode aimed squarely at Abaan.",
+          "Meet Muji AI, create images from text, and chat with a playful roast mode for Abaan.",
       },
-      { property: "og:title", content: "Mujeeb AI — Image Studio & Roast Chat" },
+      { property: "og:title", content: "Muji AI — Image Studio & Chat" },
       {
         property: "og:description",
         content:
-          "Generate images from text and chat with Mujeeb AI, complete with a roast mode aimed squarely at Abaan.",
+          "Meet Muji AI, create images from text, and chat with a playful roast mode for Abaan.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -38,15 +39,25 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto w-full max-w-4xl px-4 py-10">
-        <header className="mb-8 text-center">
-          <h1 className="text-4xl font-bold tracking-tight">Mujeeb AI</h1>
-          <p className="text-muted-foreground mt-2">
-            Image generation and chat, powered by Lovable AI.
-          </p>
+      <div className="mx-auto w-full max-w-5xl px-4 py-4 sm:px-6 sm:py-6">
+        <header className="relative mb-6 min-h-[25rem] max-h-[38rem] overflow-hidden rounded-lg sm:min-h-[31rem]">
+          <img
+            src={mujiPortrait.url}
+            alt="Muji wearing sunglasses"
+            className="absolute inset-0 h-full w-full object-cover object-center sm:object-[center_43%]"
+          />
+          <div className="bg-hero-scrim absolute inset-0" />
+          <div className="absolute inset-x-0 bottom-0 px-6 pb-7 sm:px-10 sm:pb-10">
+            <p className="mb-2 text-sm font-medium uppercase text-hero-foreground/80">
+              Meet your new creative sidekick
+            </p>
+            <h1 className="max-w-2xl text-4xl font-bold text-hero-foreground sm:text-6xl">
+              Hi, I’m Muji AI.
+            </h1>
+          </div>
         </header>
 
-        <Tabs defaultValue="image">
+        <Tabs defaultValue="image" className="scroll-mt-4">
           <TabsList className="mx-auto mb-6 grid w-full max-w-sm grid-cols-2">
             <TabsTrigger value="image">
               <ImageIcon className="mr-2 size-4" /> Images
@@ -162,7 +173,7 @@ function ChatPanel() {
   return (
     <div className="border-border bg-card flex h-[32rem] flex-col rounded-xl border shadow-sm">
       <div className="border-border flex items-center justify-between border-b px-4 py-3">
-        <span className="text-sm font-medium">Chat with Mujeeb AI</span>
+        <span className="text-sm font-medium">Chat with Muji AI</span>
         <div className="flex items-center gap-2">
           <Flame className={cn("size-4", roast ? "text-destructive" : "text-muted-foreground")} />
           <Label htmlFor="roast" className="text-sm">
