@@ -22,7 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import mujiPortrait from "@/assets/muji-portrait.jpg.asset.json";
+const MUJI_PORTRAIT_URL = "/muji-portrait.jpg";
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -52,7 +52,7 @@ function Index() {
       <div className="mx-auto w-full max-w-5xl px-4 py-4 sm:px-6 sm:py-6">
         <header className="relative mb-6 min-h-[25rem] max-h-[38rem] overflow-hidden rounded-lg sm:min-h-[31rem]">
           <img
-            src={mujiPortrait.url}
+            src={MUJI_PORTRAIT_URL}
             alt="Muji wearing sunglasses"
             className="absolute inset-0 h-full w-full object-cover object-center sm:object-[center_43%]"
           />
