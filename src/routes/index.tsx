@@ -12,9 +12,18 @@ import {
   Paperclip,
   Send,
   Sparkles,
+  Trash2,
   X,
 } from "lucide-react";
 import { streamImage } from "@/lib/stream-image";
+import {
+  CHAT_HISTORY_KEY,
+  IMAGE_HISTORY_KEY,
+  clearKey,
+  loadJSON,
+  saveJSON,
+  type SavedImage,
+} from "@/lib/local-history";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -96,13 +105,39 @@ function ImageStudio() {
   const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [history, setHistory] = useState<SavedImage[]>([]);
+  const [hydrated, setHydrated] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setHistory(loadJSON<SavedImage[]>(IMAGE_HISTORY_KEY, []));
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    saveJSON(IMAGE_HISTORY_KEY, history);
+  }, [history, hydrated]);
 
   useEffect(() => {
     const urls = files.map((file) => URL.createObjectURL(file));
     setPreviews(urls);
     return () => urls.forEach((url) => URL.revokeObjectURL(url));
   }, [files]);
+
+  const remember = (dataUrl: string, usedPrompt: string) => {
+    setHistory((prev) =>
+      [
+        ...prev,
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          prompt: usedPrompt,
+          dataUrl,
+          createdAt: Date.now(),
+        },
+      ].slice(-12),
+    );
+  };
 
   const generate = async () => {
     if (!prompt.trim() || loading) return;
@@ -118,11 +153,13 @@ function ImageStudio() {
         await streamImage("/api/edit-image", form, (dataUrl, final) => {
           setImage(dataUrl);
           setIsFinal(final);
+          if (final) remember(dataUrl, prompt);
         });
       } else {
         await streamImage("/api/generate-image", { prompt }, (dataUrl, final) => {
           setImage(dataUrl);
           setIsFinal(final);
+          if (final) remember(dataUrl, prompt);
         });
       }
     } catch (err) {
@@ -132,8 +169,9 @@ function ImageStudio() {
     }
   };
 
-  const download = async () => {
-    if (!image) return;
+  const download = async (target: string | null = image) => {
+    if (!target) return;
+    const image = target;
     try {
       // Convert the data URL to a real file blob so the browser saves it to the device
       const blob = await (await fetch(image)).blob();
@@ -235,9 +273,62 @@ function ImageStudio() {
 
       {image && isFinal && (
         <div className="mt-4 flex justify-end">
-          <Button variant="outline" onClick={download}>
+          <Button variant="outline" onClick={() => void download(image)}>
             <Download className="mr-2 size-4" /> Download
           </Button>
+        </div>
+      )}
+
+      {history.length > 0 && (
+        <div className="border-border mt-8 border-t pt-6">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-sm font-medium">Your images</span>
+            <Button variant="ghost" size="sm" onClick={() => setHistory([])}>
+              <Trash2 className="mr-2 size-4" /> Clear
+            </Button>
+          </div>
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+            {[...history].reverse().map((item) => (
+              <div key={item.id} className="group relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImage(item.dataUrl);
+                    setIsFinal(true);
+                    setPrompt(item.prompt);
+                  }}
+                  className="block w-full"
+                  title={item.prompt}
+                >
+                  <img
+                    src={item.dataUrl}
+                    alt={item.prompt}
+                    className="border-border aspect-square w-full rounded-md border object-cover"
+                  />
+                </button>
+                <div className="absolute inset-x-1 bottom-1 flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7"
+                    aria-label="Download image"
+                    onClick={() => void download(item.dataUrl)}
+                  >
+                    <Download className="size-3" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7"
+                    aria-label="Delete image"
+                    onClick={() => setHistory((prev) => prev.filter((h) => h.id !== item.id))}
+                  >
+                    <X className="size-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -251,12 +342,25 @@ function ChatPanel() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const transport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
-  const { messages, sendMessage, status } = useChat({
+  const { messages, setMessages, sendMessage, status } = useChat({
     transport,
     onError: (err) => setError(err.message || "Chat failed"),
   });
+  const [hydrated, setHydrated] = useState(false);
 
   const isLoading = status === "submitted" || status === "streaming";
+
+  useEffect(() => {
+    const saved = loadJSON<typeof messages>(CHAT_HISTORY_KEY, []);
+    if (saved.length) setMessages(saved);
+    setHydrated(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || isLoading) return;
+    saveJSON(CHAT_HISTORY_KEY, messages);
+  }, [messages, hydrated, isLoading]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -280,6 +384,19 @@ function ChatPanel() {
             Roast Abaan
           </Label>
           <Switch id="roast" checked={roast} onCheckedChange={setRoast} />
+          {messages.length > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Clear chat history"
+              onClick={() => {
+                setMessages([]);
+                clearKey(CHAT_HISTORY_KEY);
+              }}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          )}
         </div>
       </div>
 
