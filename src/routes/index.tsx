@@ -37,20 +37,48 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Muji AI — Image Studio & Chat" },
+      { title: "Muji AI (Mujeeb AI) — AI Image Generator & Chat" },
       {
         name: "description",
         content:
-          "Meet Muji AI, create images from text, and chat with a playful roast mode for Abaan.",
+          "Muji AI, also known as Mujeeb AI, is a free AI image generator and chatbot by Muji — create images from text, edit photos, and chat with a playful roast mode.",
       },
-      { property: "og:title", content: "Muji AI — Image Studio & Chat" },
+      { property: "og:title", content: "Muji AI (Mujeeb AI) — AI Image Generator & Chat" },
       {
         property: "og:description",
         content:
-          "Meet Muji AI, create images from text, and chat with a playful roast mode for Abaan.",
+          "Muji AI, also known as Mujeeb AI, is a free AI image generator and chatbot by Muji — create images from text, edit photos, and chat with a playful roast mode.",
       },
+      { property: "og:url", content: "https://mujiai.lovable.app/" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [{ rel: "canonical", href: "https://mujiai.lovable.app/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Muji AI",
+          alternateName: ["Mujeeb AI", "Muji AI by Mujeeb"],
+          url: "https://mujiai.lovable.app/",
+          description:
+            "Free AI image generator and chatbot — create images from text, edit photos, and chat with Muji AI.",
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "Muji AI",
+          alternateName: "Mujeeb AI",
+          applicationCategory: "MultimediaApplication",
+          operatingSystem: "Web",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+        }),
+      },
     ],
   }),
 });
