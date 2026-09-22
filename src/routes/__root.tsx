@@ -77,14 +77,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { name: "google-site-verification", content: "YQZ20hblgXtd9AtCytLtRjK3RLAOiL6Rj19YS_v8XC4" },
+      { title: "Muji AI — Mujeeb AI" },
+      { name: "description", content: "Muji AI (also spelled Mujeeb AI) — create AI images and chat with Muji." },
+      { name: "author", content: "Muji AI" },
+      { property: "og:site_name", content: "Muji AI" },
+      { property: "og:title", content: "Muji AI — Mujeeb AI" },
+      { property: "og:description", content: "Muji AI (also spelled Mujeeb AI) — create AI images and chat with Muji." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
